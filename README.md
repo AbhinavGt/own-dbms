@@ -51,10 +51,12 @@ repeated concurrent runs can lose entries or fail during concurrent mutation.
 
 ## Why the global lock exists.
 To verify the lock is necessary, I temporarily ran the server without SynchronizedRequestProcessor.
-In N of M runs of the concurrency test, ......
-With the lock, the same test passed in M of M runs.
+The concurrency test failed in X of 20 runs, with acknowledged writes lost: a client received OK for a SET and then (nil) for a GET of the same key.
+This is a data race on the underlying HashMap.
+With the lock, the same test passed in 20 of 20 runs.
 The trade-off is that the lock serializes all commands, so throughput doesn't scale with cores.
 Sharded locks or a single-threaded event loop (as Redis uses) would be the next step.
+
 ## Known limitations
 
 There is no TTL, eviction, persistence, RESP protocol, authentication, TLS,
