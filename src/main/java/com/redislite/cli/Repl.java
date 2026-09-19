@@ -1,9 +1,8 @@
 package com.redislite.cli;
 
 import com.redislite.command.CommandDispatcher;
-import com.redislite.protocol.CommandParser;
-import com.redislite.protocol.ParseException;
-import com.redislite.protocol.ParsedCommand;
+import com.redislite.command.DefaultRequestProcessor;
+import com.redislite.command.RequestProcessor;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,13 +13,15 @@ import java.nio.charset.StandardCharsets;
 
 /** Runs the line-oriented command prompt over injected streams. */
 public final class Repl {
-    private final CommandDispatcher dispatcher;
+    private final RequestProcessor processor;
     private final InputStream input;
     private final OutputStream output;
-    private final CommandParser parser = new CommandParser();
-
     public Repl(CommandDispatcher dispatcher, InputStream input, OutputStream output) {
-        this.dispatcher = dispatcher;
+        this(new DefaultRequestProcessor(dispatcher), input, output);
+    }
+
+    public Repl(RequestProcessor processor, InputStream input, OutputStream output) {
+        this.processor = processor;
         this.input = input;
         this.output = output;
     }
@@ -34,14 +35,9 @@ public final class Repl {
                 writer.flush();
                 line = reader.readLine();
                 if (line == null) break;
-                if (line.trim().isEmpty()) continue;
-                try {
-                    ParsedCommand command = parser.parse(line);
-                    writer.println(dispatcher.execute(command));
-                    if (command.name().equals("QUIT")) break;
-                } catch (ParseException exception) {
-                    writer.println("ERR " + exception.getMessage());
-                }
+                var reply = processor.process(line);
+                if (reply.text() != null) writer.println(reply.text());
+                if (reply.close()) break;
             }
         } catch (IOException exception) {
             throw new IllegalStateException("I/O error in REPL", exception);

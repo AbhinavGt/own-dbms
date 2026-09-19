@@ -1,3 +1,5 @@
+# Agent Thinking
+
 I’ll inspect the checkpoint plan and current project state, then implement the next incomplete checkpoint in Java and run the narrowest relevant validation.
 
 Search "**/*" 1 file found
@@ -78,10 +80,10 @@ Validation:
 > BYE
 
 Maven validation could not be rerun in this shell because  mvn  is not installed, but the project includes the required Maven configuration and tests.
-explain me in detail what you created how it works the files and its use
-the out of scope and limitation of it project
-and commands to run project
-Thought for 86s
+
+# Working
+
+>  explain me in detail what you created how it works the files and its use the out of scope and limitation of it project and commands to run project
 
 Redis-lite Checkpoint 1
 
@@ -96,7 +98,7 @@ QUIT
 
 The project is intentionally single-threaded and stores all data in memory using Java’s  HashMap .
 
-Project structure
+## Project structure
 
 redis-lite/
 ├── checkpoint1.md
@@ -123,7 +125,7 @@ redis-lite/
         ├── protocol/CommandParserTest.java
         └── store/InMemoryStoreTest.java
 
-Main application flow
+## Main application flow
 
 For every line entered by the user:
 
@@ -162,7 +164,7 @@ The dispatcher then stores the value and returns:
 
 OK
 
- pom.xml 
+## pom.xml 
 
 The Maven configuration defines:
 
@@ -175,7 +177,7 @@ The Maven configuration defines:
 
 There are no runtime third-party dependencies. JUnit is used only for testing.
 
- Main.java 
+## Main.java 
 
  Main  is the application entry point.
 
@@ -192,7 +194,7 @@ System.out
 
 The storage implementation is created in  Main , while the REPL and dispatcher receive their dependencies through constructors. This keeps the components testable and replaceable later.
 
- KeyValueStore.java 
+## KeyValueStore.java 
 
 This is the storage interface:
 
@@ -214,7 +216,7 @@ This allows future checkpoints to replace the implementation with:
 
 without changing the dispatcher API.
 
- InMemoryStore.java 
+## InMemoryStore.java 
 
  InMemoryStore  implements  KeyValueStore  using:
 
@@ -239,7 +241,7 @@ store.size();            // 0
 
 The store does not print anything and does not understand commands such as  GET  or  SET .
 
- ParsedCommand.java 
+## ParsedCommand.java 
 
  ParsedCommand  is a Java record containing:
 
@@ -260,7 +262,7 @@ GET
 
 The argument list is copied using  List.copyOf , so callers cannot mutate the stored argument list.
 
- ParseException.java 
+## ParseException.java 
 
 This is the exception used when a command line cannot be parsed.
 
@@ -270,7 +272,7 @@ empty command
 
 The REPL ignores blank input before parsing, while the parser itself still correctly reports blank input as invalid. This lets the parser be tested independently.
 
- CommandParser.java 
+## CommandParser.java 
 
 The parser converts raw text into a  ParsedCommand .
 
@@ -314,7 +316,7 @@ This allows values to contain spaces.
 
 Keys themselves cannot contain whitespace because the first whitespace-separated token after  SET  is always interpreted as the key.
 
- CommandHandler.java 
+## CommandHandler.java 
 
 This is a functional interface representing a command implementation.
 
@@ -324,13 +326,13 @@ Map<String, CommandHandler>
 
 The dispatcher maps command names to handler methods. Adding a future command can therefore be done by registering another handler.
 
- CommandDispatcher.java 
+## CommandDispatcher.java 
 
 The dispatcher receives a  ParsedCommand  and returns exactly one response string.
 
 It never prints output.
 
- SET 
+### SET 
 
 Syntax:
 
@@ -348,7 +350,7 @@ Missing key or value:
 
 ERR wrong number of arguments for 'SET'
 
- GET 
+### GET 
 
 Syntax:
 
@@ -370,7 +372,7 @@ Incorrect argument count:
 
 ERR wrong number of arguments for 'GET'
 
- DEL 
+### DEL 
 
 Syntax:
 
@@ -386,7 +388,7 @@ if the key was deleted, or:
 
 if it did not exist.
 
- EXISTS 
+### EXISTS 
 
 Syntax:
 
@@ -400,7 +402,7 @@ if the key exists, otherwise:
 
 0
 
- PING 
+### PING 
 
 Syntax:
 
@@ -414,7 +416,7 @@ Arguments are rejected:
 
 ERR wrong number of arguments for 'PING'
 
- QUIT 
+### QUIT 
 
 Syntax:
 
@@ -426,7 +428,7 @@ BYE
 
 The REPL exits after printing the response.
 
-Unknown commands
+### Unknown commands
 
 For:
 
@@ -436,7 +438,7 @@ the dispatcher returns:
 
 ERR unknown command 'FOO'
 
- Repl.java 
+## Repl.java 
 
  Repl  is the command-line read-eval-print loop.
 
@@ -451,7 +453,6 @@ The streams are injected instead of hard-coded. This makes it possible to test t
 For every input line, it:
 
 1. Prints the prompt:
->
 2. Reads a line
 3. Ignores blank lines
 4. Parses the command
@@ -489,7 +490,7 @@ Tests
 
 The project includes tests for all major layers.
 
- InMemoryStoreTest 
+# InMemoryStoreTest 
 
 Tests:
 
@@ -501,7 +502,7 @@ Tests:
 • Tracking store size
 • Rejecting null keys and values
 
- CommandParserTest 
+# CommandParserTest 
 
 Tests:
 
@@ -513,7 +514,7 @@ Tests:
 • Blank input
 • Missing  SET  arguments
 
- CommandDispatcherTest 
+# CommandDispatcherTest 
 
 Tests:
 
@@ -524,7 +525,7 @@ Tests:
 •  GET  after  DEL 
 • Values containing spaces
 
- ReplTest 
+# ReplTest 
 
 Tests:
 
@@ -533,7 +534,7 @@ Tests:
 • Exit on end-of-input
 • Ignoring blank lines
 
-Commands to build and run
+# Commands to build and run
 
 From the project root:
 
@@ -571,7 +572,7 @@ Expected output:
 > PONG
 > BYE
 
-Interactive usage
+# Interactive usage
 
 java -jar target/redis-lite-1.0-SNAPSHOT.jar
 
@@ -584,83 +585,74 @@ DEL language
 GET language
 QUIT
 
-Out of scope for Checkpoint 1
+# Out of scope for Checkpoint 1
 
 The following features are intentionally not implemented yet:
 
-Networking
+- Networking
+  - There is no TCP server and no client/server protocol. The application only reads from standard input and writes to standard output.
 
-There is no TCP server and no client/server protocol. The application only reads from standard input and writes to standard output.
+- Concurrency
 
-Concurrency
+  - The store is single-threaded. It does not use:
+    - Threads
+    - Locks
+    - Synchronization
+    -  Concurrent collections
 
-The store is single-threaded. It does not use:
+  - It is not safe for concurrent access.
 
-• Threads
-• Locks
-• Synchronization
-• Concurrent collections
+- TTL and expiration
 
-It is not safe for concurrent access.
+  - Commands such as these do not exist:
+    - EXPIRE
+    - TTL
+    - SETEX
 
-TTL and expiration
+  - Keys remain in the store until explicitly deleted or until the process exits.
 
-Commands such as these do not exist:
+- LRU eviction
+  - There is no maximum key count and no least-recently-used eviction policy.
 
-EXPIRE
-TTL
-SETEX
+- Persistence
 
-Keys remain in the store until explicitly deleted or until the process exits.
+  - Data is not saved to disk. All values are lost when the process exits.
 
-LRU eviction
+  - There is no:
+    - Append-only file
+    - Snapshot file
+    - Database storage
+    - Recovery mechanism
 
-There is no maximum key count and no least-recently-used eviction policy.
+- RESP protocol
+  - The implementation uses simple text lines rather than Redis’s RESP protocol.
 
-Persistence
+- Custom hash table
+  - The store currently uses Java’s built-in  HashMap . A custom hash table is planned for a later checkpoint.
 
-Data is not saved to disk. All values are lost when the process exits.
+- Additional data types
+  - Only string keys and string values are supported. There are no:
+    - Lists
+    - Sets
+    - Hashes
+    - Sorted sets
+    - Streams
+    - Bitmaps
 
-There is no:
-
-• Append-only file
-• Snapshot file
-• Database storage
-• Recovery mechanism
-
-RESP protocol
-
-The implementation uses simple text lines rather than Redis’s RESP protocol.
-
-Custom hash table
-
-The store currently uses Java’s built-in  HashMap . A custom hash table is planned for a later checkpoint.
-
-Additional data types
-
-Only string keys and string values are supported. There are no:
-
-• Lists
-• Sets
-• Hashes
-• Sorted sets
-• Streams
-• Bitmaps
-
-Advanced Redis features
+# Advanced Redis features
 
 The project does not currently support:
 
-• Transactions
-• Pub/sub
-• Authentication
-• Databases or namespaces
-• Replication
-• Scripting
-• Configuration files
-• Monitoring commands
+- Transactions
+- Pub/sub
+- Authentication
+- Databases or namespaces
+- Replication
+- Scripting
+- Configuration files
+- Monitoring commands
 
-Current limitations
+# Current limitations
 
 The most important current limitations are:
 
@@ -677,3 +669,168 @@ The most important current limitations are:
 
 This structure provides a clean foundation for future checkpoints. Networking can reuse  CommandDispatcher , while future storage features can be added behind the  KeyValueStore  interface.
 
+# whats difference between src and target?
+- src  and  target  serve different purposes in a Maven Java project.
+
+ ## src 
+
+src  contains the project’s source code and tests that you write and maintain.
+
+src/
+├── main/
+│   └── java/
+│       └── com/redislite/
+│           ├── Main.java
+│           ├── cli/
+│           ├── command/
+│           ├── protocol/
+│           └── store/
+└── test/
+    └── java/
+        └── com/redislite/
+
+## src/main 
+
+Contains the actual application code:
+
+src/main/java/com/redislite/Main.java
+
+These  .java  files are compiled into  .class  files.
+
+## src/test 
+
+Contains automated tests:
+
+src/test/java/com/redislite/store/InMemoryStoreTest.java
+
+Tests verify that the application behaves correctly. They are not included in the production application.
+
+You should edit files under  src ,  pom.xml , and usually  README.md .
+
+## target 
+
+ target  contains generated build output created by Maven.
+
+Example contents:
+
+target/
+├── classes/
+├── test-classes/
+├── surefire-reports/
+└── redis-lite-1.0-SNAPSHOT.jar
+
+## target/classes 
+
+Contains compiled application classes:
+
+target/classes/com/redislite/Main.class
+
+These are generated from:
+
+src/main/java/com/redislite/Main.java
+
+## target/test-classes 
+
+Contains compiled test classes generated from:
+
+src/test/java/
+
+ target/surefire-reports 
+
+Contains test execution reports generated by Maven.
+
+## target/redis-lite-1.0-SNAPSHOT.jar 
+
+This is the packaged application created by:
+
+mvn package
+
+You can run it with:
+
+java -jar target/redis-lite-1.0-SNAPSHOT.jar
+
+## Relationship
+
+The normal build flow is:
+
+src/main/java/*.java
+        |
+        | javac / Maven compile
+        v
+target/classes/*.class
+        |
+        | Maven package
+        v
+target/redis-lite-1.0-SNAPSHOT.jar
+
+Tests follow a similar path:
+
+src/test/java/*.java
+        |
+        v
+target/test-classes/*.class
+        |
+        v
+target/surefire-reports/*
+
+# Important rule
+
+Do not manually edit files in  target .
+
+They are generated files and can be deleted and recreated at any time:
+
+mvn clean
+
+The  clean  command removes  target .
+
+Then:
+
+mvn package
+
+recreates it.
+
+In practice:
+
+┌───────────┬────────────────────────────────────────────┬────────────────┐
+│ Directory │ Purpose                                    │ Edit manually? │
+├───────────┼────────────────────────────────────────────┼────────────────┤
+│ src       │ Application source code and tests          │ Yes            │
+├───────────┼────────────────────────────────────────────┼────────────────┤
+│ target    │ Compiled files, test reports, packaged JAR │ No             │
+└───────────┴────────────────────────────────────────────┴────────────────┘
+
+Usually,  target  is added to  .gitignore  because it contains generated build artifacts, while  src  is committed to version control.
+
+# what does these 2 do??
+Run using compiled classes
+java -cp target/classes com.redislite.Main
+Run the packaged JAR
+java -jar target/redis-lite-1.0-SNAPSHOT.jar
+
+
+
+Both start the same program, your REPL. They differ in *what* Java loads the code from.
+
+### `java -cp target/classes com.redislite.Main`
+
+- `target/classes` is the folder where Maven puts your compiled `.class` files after `mvn compile` (or `test`/`package`).
+- `-cp` means "classpath", the list of places Java should look for classes.
+- `com.redislite.Main` is the fully qualified name of the class whose `main` method should run. You have to tell Java which class to start.
+
+You're pointing Java at loose compiled files and naming the entry point yourself. This is handy during development because you  don't need to build a jar first. Run `mvn compile`, then run it.
+
+### `java -jar target/redis-lite-1.0-SNAPSHOT.jar`
+
+- A JAR is a zip of your compiled classes, produced by `mvn package`.
+- `-jar` tells Java to run that file. You don't name the main class, because the jar's `META-INF/MANIFEST.MF` has a `Main-Class` entry that says which one to start. Your `pom.xml` sets this, which is why it works.
+
+This is the shippable form: one file you can copy anywhere  that has Java and run. It's also what you'd put in a Dockerfile later or attach to a GitHub release.
+
+### Which to use
+
+| Situation                                     | Use                                    |
+| --------------------------------------------- | -------------------------------------- |
+| Quick testing while coding                    | `-cp target/classes` (skips packaging) |
+| Demoing, sharing, README instructions, Docker | `-jar`                                 |
+
+The program behaves identically either way. One catch is that `-cp` runs whatever is currently compiled, so if you edit code and forget to recompile, you'll run the old version.

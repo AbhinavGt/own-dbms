@@ -1,4 +1,7 @@
 com/redislite/cli/ReplTest.class
 com/redislite/store/InMemoryStoreTest.class
+com/redislite/server/TcpServerTest.class
 com/redislite/protocol/CommandParserTest.class
+com/redislite/server/TcpServerConcurrencyTest.class
+com/redislite/command/SynchronizedRequestProcessorTest.class
 com/redislite/command/CommandDispatcherTest.class
