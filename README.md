@@ -1,63 +1,65 @@
 # Redis-lite
 
-Redis-lite is a small in-memory key-value store with a newline-delimited UTF-8
-protocol and a blocking TCP server. The store remains HashMap-backed; command
-execution is serialized by one global lock.
+A small Java 17 line-protocol key/value server with TTL, active expiration,
+LRU limits, and an append-only persistence log.
 
-## Build and run
-
-Requires Java 17 and Maven:
+## Quick start
 
 ```sh
-mvn clean test
-mvn package
-java -jar target/redis-lite-1.0-SNAPSHOT.jar
+mvn clean package
+java -jar target/redis-lite-1.0-SNAPSHOT.jar --port 6380
 ```
 
-The server listens on port 6380 by default (6379 is intentionally avoided).
-Use `java -jar target/redis-lite-1.0-SNAPSHOT.jar --port 7000` to select a
-port, or `--repl` for the interactive Checkpoint 1 prompt.
+```text
+SET a 1       -> OK
+EXPIRE a 5    -> 1
+TTL a         -> 5
+```
 
-## Commands
+Connect with `nc localhost 6380`. Commands are `SET key value`, `GET key`,
+`DEL key`, `EXISTS key`, `EXPIRE key seconds`, `TTL key`, `DBSIZE`, `PING`, and
+`QUIT`. Values may contain spaces.
 
-* `SET key value` stores a value and returns `OK`. The value is the rest of
-  the line, so it may contain spaces.
-* `GET key` returns the value or `(nil)`.
-* `DEL key` returns `1` when a key was deleted, otherwise `0`.
-* `EXISTS key` returns `1` or `0`.
-* `PING` returns `PONG`.
-* `QUIT` returns `BYE` and exits.
+## Architecture
 
-Commands are case-insensitive. Keys cannot contain whitespace. Invalid
-argument counts return an `ERR` response; blank input is ignored.
+```mermaid
+flowchart TD
+ C[Clients] -->|TCP, newline protocol| H[ClientHandler threads]
+ H --> L{{Global lock}} --> P[RequestProcessor / CommandDispatcher]
+ P --> PS[PersistentStore] --> ES[ExpiringLruStore<br/>HashMap + LRU list + expiry min-heap]
+ PS -->|append| A[AofWriter] --> F[(appendonly.aof)]
+ SW[ExpirySweeper thread] -->|same lock| L
+ FS[fsync thread everysec] --> A
+ F -.replay on startup.-> AL[AofLoader] -.-> ES
+```
 
-## Network protocol
+The store is a hash map of entries, with each entry linked into a sentinel
+doubly-linked LRU list. Expiry records are a min-heap; old records are
+deliberately retained and ignored when their timestamp no longer matches.
+GET/SET/DEL are O(1) average, EXPIRE is O(log n), sweeper work is O(k log n),
+and eviction is O(1).
 
-Clients connect with a normal TCP client such as `nc localhost 6380`. Requests
-are UTF-8 lines terminated by `\n`; `\r\n` is also accepted. Every non-blank
-request that produces output receives exactly one response line. `QUIT`
-returns `BYE` and closes only that connection. Commands may be split across
-TCP packets or combined in one packet.
+## Configuration
 
-## Concurrency notes
+`--port n`, `--repl`, `--max-keys n`, `--no-aof`, `--aof-file path`,
+`--aof-fsync always|everysec|no`, and `--sweep-interval-ms n`.
 
-Each client has a daemon handler thread, while a `SynchronizedRequestProcessor`
-holds one lock for the complete parse-and-dispatch operation. Socket I/O is
-outside the lock, so slow clients do not prevent other clients from reading or
-writing. The design is simple and correct, but serializes all commands and
-limits throughput; a sharded lock or event loop would be natural next steps.
-Removing the lock in a local experiment makes the HashMap-backed store unsafe:
-repeated concurrent runs can lose entries or fail during concurrent mutation.
+The AOF contains UTF-8 `SET`, `DEL`, and absolute-timestamp `PEXPIREAT` records.
+ALWAYS forces each append, EVERYSEC uses a daemon fsync thread, and NO only
+forces at close. A torn final line is truncated; complete malformed lines are
+fatal. Apply-then-log makes a failed log read-only while preserving reads.
 
-## Why the global lock exists.
-To verify the lock is necessary, I temporarily ran the server without SynchronizedRequestProcessor.
-The concurrency test failed in X of 20 runs, with acknowledged writes lost: a client received OK for a SET and then (nil) for a GET of the same key.
-This is a data race on the underlying HashMap.
-With the lock, the same test passed in 20 of 20 runs.
-The trade-off is that the lock serializes all commands, so throughput doesn't scale with cores.
-Sharded locks or a single-threaded event loop (as Redis uses) would be the next step.
+All commands and the sweeper share one global lock; socket I/O is outside it.
+The EVERYSEC fsync thread does not take that lock. Wall-clock absolute times
+survive restarts, but clock jumps are a known trade-off. Replay disables
+eviction and restores the configured limit afterwards, so GET recency is not
+recoverable. `DBSIZE` may include expired entries awaiting a sweep.
 
-## Known limitations
+## Testing and limitations
 
-There is no TTL, eviction, persistence, RESP protocol, authentication, TLS,
-connection limit, idle timeout, or data types beyond string keys and values.
+Run `mvn clean test`. Tests cover protocol/server behavior, expiry, data
+structures, persistence, randomized models, and recovery. The AOF grows
+forever: there is no rewrite, snapshot, checksum, RESP compatibility, event
+loop, or additional data type. The global lock and ALWAYS fsync limit
+throughput. Benchmark methodology is documented in
+[`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).

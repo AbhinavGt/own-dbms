@@ -36,6 +36,8 @@ public final class InMemoryStore implements KeyValueStore {
     public int size() {
         return values.size();
     }
+    @Override public boolean setExpiryAt(String key, long at) { requireNonNull(key, "key"); return values.containsKey(key); }
+    @Override public long ttlMillis(String key) { requireNonNull(key, "key"); return values.containsKey(key) ? -1 : -2; }
 
     private static void requireNonNull(String value, String name) {
         if (value == null) {

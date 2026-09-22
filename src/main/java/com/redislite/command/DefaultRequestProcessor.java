@@ -2,6 +2,7 @@ package com.redislite.command;
 
 import com.redislite.protocol.CommandParser;
 import com.redislite.protocol.ParseException;
+import com.redislite.persistence.PersistenceException;
 
 /** Parses and dispatches requests without synchronization. */
 public final class DefaultRequestProcessor implements RequestProcessor {
@@ -27,6 +28,8 @@ public final class DefaultRequestProcessor implements RequestProcessor {
             return new Reply(dispatcher.execute(command), command.name().equalsIgnoreCase("QUIT"));
         } catch (ParseException exception) {
             return new Reply("ERR " + exception.getMessage(), false);
+        } catch (PersistenceException exception) {
+            return new Reply("ERR persistence failure, server is read-only", false);
         } catch (RuntimeException exception) {
             return new Reply("ERR internal error", false);
         }

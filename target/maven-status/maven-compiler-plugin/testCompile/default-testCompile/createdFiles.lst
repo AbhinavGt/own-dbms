@@ -1,7 +1,13 @@
 com/redislite/cli/ReplTest.class
-com/redislite/store/InMemoryStoreTest.class
 com/redislite/server/TcpServerTest.class
-com/redislite/protocol/CommandParserTest.class
 com/redislite/server/TcpServerConcurrencyTest.class
+com/redislite/ds/MinHeapTest.class
 com/redislite/command/SynchronizedRequestProcessorTest.class
+com/redislite/persistence/AofPersistenceTest.class
+com/redislite/store/InMemoryStoreTest.class
+com/redislite/TestTimeSource.class
+com/redislite/protocol/CommandParserTest.class
+com/redislite/store/ExpiringLruStoreTest.class
+com/redislite/command/ExpiryCommandTest.class
 com/redislite/command/CommandDispatcherTest.class
+com/redislite/store/LruListTest.class

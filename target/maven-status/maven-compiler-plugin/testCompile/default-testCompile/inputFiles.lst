@@ -1,7 +1,13 @@
+/home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/TestTimeSource.java
 /home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/cli/ReplTest.java
 /home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/command/CommandDispatcherTest.java
+/home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/command/ExpiryCommandTest.java
 /home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/command/SynchronizedRequestProcessorTest.java
+/home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/ds/MinHeapTest.java
+/home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/persistence/AofPersistenceTest.java
 /home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/protocol/CommandParserTest.java
 /home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/server/TcpServerConcurrencyTest.java
 /home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/server/TcpServerTest.java
+/home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/store/ExpiringLruStoreTest.java
 /home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/store/InMemoryStoreTest.java
+/home/a8hi9t/Work/kiwi-redis/src/test/java/com/redislite/store/LruListTest.java
